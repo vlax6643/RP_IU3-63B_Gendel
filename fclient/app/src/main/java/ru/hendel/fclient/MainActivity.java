@@ -17,11 +17,12 @@ import android.widget.Toast;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 
+import java.text.DecimalFormat;
 import java.util.Arrays;
 
 import ru.hendel.fclient.databinding.ActivityMainBinding;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements TransactionEvents {
 
     // Used to load the 'fclient' library on application startup.
     static {
@@ -38,7 +39,9 @@ public class MainActivity extends AppCompatActivity {
     public static native byte[] randomBytes(int no);
     public native byte[] encrypt(byte[] key, byte[] data);
     public native byte[] decrypt(byte[] key, byte[] data);
-    ActivityResultLauncher activityResultLauncher;
+    private String pin;
+    ActivityResultLauncher<Intent> activityResultLauncher;
+    public native boolean transaction(byte[] trd);
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,9 +54,9 @@ public class MainActivity extends AppCompatActivity {
         Log.d("RandomBytes", Arrays.toString(randomBytes));
 
         byte[] key = "1234567890abcdef".getBytes();
-        byte[] data = "Hello, World!".getBytes();
+        byte[] datas = "Hello, World!".getBytes();
 
-        byte[] encryptedData = encrypt(key, data);
+        byte[] encryptedData = encrypt(key, datas);
         Log.d("EncryptedData", Arrays.toString(encryptedData));
 
         byte[] decryptedData = decrypt(key, encryptedData);
@@ -61,17 +64,20 @@ public class MainActivity extends AppCompatActivity {
 
         activityResultLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
-                new ActivityResultCallback<ActivityResult>() {
-                    @Override
-                    public void onActivityResult(ActivityResult result) {
-                        if (result.getResultCode() == Activity.RESULT_OK) {
-                            Intent data = result.getData();
-                            // обработка результата
-                            String pin = data.getStringExtra("pin");
-                            Toast.makeText(MainActivity.this, pin, Toast.LENGTH_SHORT).show();
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK) {
+                        Intent data = result.getData();
+
+                        //String pin = data.getStringExtra("pin");
+                        assert data != null;
+                        pin = data.getStringExtra("pin");
+                        synchronized (MainActivity.this) {
+                            MainActivity.this.notifyAll();
                         }
                     }
-                });
+                }
+        );
+
     }
 
     public static byte[] stringToHex(String s)
@@ -91,10 +97,35 @@ public class MainActivity extends AppCompatActivity {
 
     public void onButtonClick(View v)
     {
-        Intent it = new Intent(this, PinpadActivity.class);
-        //startActivity(it);
-        activityResultLauncher.launch(it);
+
+                byte[] trd = stringToHex("9F0206000000000100");
+                transaction(trd);
+
     }
+    @Override
+    public String enterPin(int ptc, String amount) {
+        pin = new String();
+        Intent it = new Intent(MainActivity.this, PinpadActivity.class);
+        it.putExtra("ptc", ptc);
+        it.putExtra("amount", amount);
+        synchronized (MainActivity.this) {
+            activityResultLauncher.launch(it);
+            try {
+                MainActivity.this.wait();
+            } catch (Exception ex) {
+                //todo: log error
+            }
+        }
+        return pin;
+    }
+
+    @Override
+    public void transactionResult(boolean result) {
+        runOnUiThread(()-> {
+            Toast.makeText(MainActivity.this, result ? "ok" : "failed", Toast.LENGTH_SHORT).show();
+        });
+    }
+
 
 
     /**
