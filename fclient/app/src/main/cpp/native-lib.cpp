@@ -55,22 +55,31 @@ Java_ru_hendel_fclient_MainActivity_encrypt(JNIEnv *env, jclass, jbyteArray key,
     mbedtls_des3_context ctx;
     mbedtls_des3_init(&ctx);
 
-    jbyte * pkey = env->GetByteArrayElements(key, 0);
+    jbyte *pkey = env->GetByteArrayElements(key, 0);
 
-    // Паддинг PKCS#5
-    int rst = dsz % 8;
-    int sz = dsz + 8 - rst;
-    uint8_t * buf = new uint8_t[sz];
-    for (int i = 7; i > rst; i--)
-        buf[dsz + i] = rst;
-    jbyte * pdata = env->GetByteArrayElements(data, 0);
+    // Вычисляем размер паддинга по PKCS#5: если данные кратны 8, добавляем 8 байт
+    int pad = dsz % 8;
+    pad = (pad == 0) ? 8 : (8 - pad);
+    int sz = dsz + pad;
+
+    uint8_t *buf = new uint8_t[sz];
+    jbyte *pdata = env->GetByteArrayElements(data, 0);
     std::copy(pdata, pdata + dsz, buf);
+
+    // Записываем паддинг: в каждый добавляемый байт записываем значение pad
+    for (int i = 0; i < pad; i++) {
+        buf[dsz + i] = pad;
+    }
+
     mbedtls_des3_set2key_enc(&ctx, (uint8_t *)pkey);
-    int cn = sz / 8;
-    for (int i = 0; i < cn; i++)
-        mbedtls_des3_crypt_ecb(&ctx, buf + i*8, buf + i*8);
+    int blocks = sz / 8;
+    for (int i = 0; i < blocks; i++) {
+        mbedtls_des3_crypt_ecb(&ctx, buf + i * 8, buf + i * 8);
+    }
+
     jbyteArray dout = env->NewByteArray(sz);
     env->SetByteArrayRegion(dout, 0, sz, (jbyte *)buf);
+
     delete[] buf;
     env->ReleaseByteArrayElements(key, pkey, 0);
     env->ReleaseByteArrayElements(data, pdata, 0);
@@ -88,22 +97,28 @@ Java_ru_hendel_fclient_MainActivity_decrypt(JNIEnv *env, jclass, jbyteArray key,
     mbedtls_des3_context ctx;
     mbedtls_des3_init(&ctx);
 
-    jbyte * pkey = env->GetByteArrayElements(key, 0);
-
-    uint8_t * buf = new uint8_t[dsz];
-
-    jbyte * pdata = env->GetByteArrayElements(data, 0);
+    jbyte *pkey = env->GetByteArrayElements(key, 0);
+    uint8_t *buf = new uint8_t[dsz];
+    jbyte *pdata = env->GetByteArrayElements(data, 0);
     std::copy(pdata, pdata + dsz, buf);
-    mbedtls_des3_set2key_dec(&ctx, (uint8_t *)pkey);
-    int cn = dsz / 8;
-    for (int i = 0; i < cn; i++)
-        mbedtls_des3_crypt_ecb(&ctx, buf + i*8, buf +i*8);
 
-    //PKCS#5. упрощено. по соображениям безопасности надо проверить каждый байт паддинга
-    int sz = dsz - 8 + buf[dsz-1];
+    mbedtls_des3_set2key_dec(&ctx, (uint8_t *)pkey);
+    int blocks = dsz / 8;
+    for (int i = 0; i < blocks; i++) {
+        mbedtls_des3_crypt_ecb(&ctx, buf + i * 8, buf + i * 8);
+    }
+
+    // Получаем размер паддинга из последнего байта и вычисляем итоговую длину исходных данных
+    int pad = buf[dsz - 1];
+    // Можно добавить проверку корректности значения pad (от 1 до 8)
+    if (pad < 1 || pad > 8) {
+        pad = 0;
+    }
+    int sz = dsz - pad;
 
     jbyteArray dout = env->NewByteArray(sz);
     env->SetByteArrayRegion(dout, 0, sz, (jbyte *)buf);
+
     delete[] buf;
     env->ReleaseByteArrayElements(key, pkey, 0);
     env->ReleaseByteArrayElements(data, pdata, 0);
