@@ -104,8 +104,8 @@ public class MainActivity extends AppCompatActivity implements TransactionEvents
     public void onButtonClick(View v)
     {
 
-               // byte[] trd = stringToHex("9F0206000000000100");
-               // transaction(trd);
+               byte[] trd = stringToHex("9F0206000000000100");
+               transaction(trd);
                 testHttpClient();
     }
     @Override
