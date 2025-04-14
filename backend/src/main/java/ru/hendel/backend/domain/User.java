@@ -27,7 +27,7 @@ public class User {
 
     @Column(name = "email", nullable = false, length = 45, unique = true)
     private String email;
-    
+
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "salt", length = 64)
     private String salt;
@@ -46,4 +46,6 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "museumid")
     )
     private Set<Museum> museums;
+
+
 }

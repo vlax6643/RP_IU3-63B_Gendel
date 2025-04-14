@@ -9,6 +9,7 @@ import ru.hendel.backend.domain.Museum;
 import ru.hendel.backend.domain.User;
 import ru.hendel.backend.repos.MuseumRepository;
 import ru.hendel.backend.repos.UserRepository;
+import ru.hendel.backend.tools.Utils;
 
 import java.util.*;
 
@@ -37,6 +38,16 @@ public class UserController {
     @PostMapping("/users")
     public ResponseEntity<Object> createUser(@RequestBody User user) {
         try {
+            // Генерация соли
+            String salt = UUID.randomUUID().toString().substring(0, 8);
+            user.setSalt(salt);
+
+            // Шифрование пароля
+            String rawPassword = user.getPassword();
+            if (rawPassword != null && !rawPassword.isEmpty()) {
+                String hashedPassword = Utils.ComputeHash(rawPassword, salt);
+                user.setPassword(hashedPassword);
+            }
 
             User newUser = userRepository.save(user);
             return new ResponseEntity<>(newUser, HttpStatus.OK);
