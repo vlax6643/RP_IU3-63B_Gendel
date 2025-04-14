@@ -1,5 +1,7 @@
 package ru.hendel.backend.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,6 +12,7 @@ import java.util.List;
 @Setter
 @Entity
 @Table(name = "countries")
+
 public class Countries {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,5 +22,6 @@ public class Countries {
     private String name;
 
     @OneToMany(mappedBy = "country")
+    @JsonManagedReference
     private List<Artist> artists;
 }

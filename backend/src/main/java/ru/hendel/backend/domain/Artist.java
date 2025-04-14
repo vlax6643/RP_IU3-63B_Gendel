@@ -1,5 +1,7 @@
 package ru.hendel.backend.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,17 +17,19 @@ public class Artist {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", nullable = false, length = 128)
+    @Column(name = "name", nullable = false, length = 128, unique = true)
     private String name;
 
     @ManyToOne
     @JoinColumn(name = "countryId", referencedColumnName = "id")
+    @JsonIgnore
     private Countries country;
 
     @Column(name = "age", length = 45)
     private String age;
 
     @OneToMany(mappedBy = "artist")
+    @JsonIgnore
     private List<Painting> paintings;
 
 }
