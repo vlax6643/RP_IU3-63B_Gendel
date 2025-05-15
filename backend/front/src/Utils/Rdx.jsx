@@ -45,7 +45,7 @@ const initialState = user ? { user } : {};
 
 // Редюсер для аутентификации
 function authentication(state = initialState, action) {
-    console.log("authentication");
+    console.log("authentication reducer:", action.type, action.user); // для отладки
     switch (action.type) {
         case userConstants.LOGIN:
             return { user: action.user };

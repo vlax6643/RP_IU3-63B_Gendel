@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navbar, Nav } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {faHome, faUser} from '@fortawesome/free-solid-svg-icons'
+import {faBars, faHome, faUser} from '@fortawesome/free-solid-svg-icons'
 import { useNavigate } from 'react-router-dom';
 import {Link} from 'react-router-dom';
 import Utils from "../Utils/Utils";
@@ -22,17 +22,27 @@ class NavigationBarClass extends React.Component {
     }
 
     logout() {
-        BackendService.logout().then(() => {
-            // Используем действие Redux вместо прямого удаления пользователя
-            this.props.dispatch(userActions.logout());
-            this.props.navigate('/login');
-        });
+        BackendService.logout()
+            .then(() => {
+                this.props.dispatch(userActions.logout());
+                this.props.navigate('/login');
+            })
+            .catch(error => {
+                console.error("Logout error:", error);
+                this.props.dispatch(userActions.logout());
+                this.props.navigate('/login');
+            });
     }
 
     render() {
         return (
             <Navbar bg="light" expand="lg">
-                <Navbar.Brand><FontAwesomeIcon icon={faHome} />{' '}My RPO</Navbar.Brand>
+                <button type="button"
+                        className="btn btn-outline-secondary mr-2"
+                        onClick={this.props.toggleSideBar}>
+                    <FontAwesomeIcon icon={ faBars} />
+                </button>
+                <Navbar.Brand>{' '}My RPO</Navbar.Brand>
                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
                 <Navbar.Collapse id="basic-navbar-nav">
                     <Nav className="ms-auto">

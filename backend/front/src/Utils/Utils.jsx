@@ -1,5 +1,4 @@
 class Utils {
-
     saveUser(user) {
         localStorage.setItem('user', JSON.stringify(user))
     }
@@ -8,20 +7,17 @@ class Utils {
         localStorage.removeItem('user')
     }
 
-    getToken()
-    {
+    getToken() {
         let user = JSON.parse(localStorage.getItem('user'))
-        return user && "Bearer " + user.token;
+        return user &&  user.token;
     }
 
-    getUserName()
-    {
+    getUserName() {
         let user = JSON.parse(localStorage.getItem('user'))
         return user && user.login;
     }
 
-    getUser()
-    {
+    getUser() {
         return JSON.parse(localStorage.getItem('user'))
     }
 }
