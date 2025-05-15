@@ -1,6 +1,9 @@
 package ru.hendel.backend.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -15,17 +18,22 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin
+
+@CrossOrigin(origins = "http://localhost:3000")
 public class CountryController {
 
     @Autowired
     CountryRepository countryRepository;
 
     @GetMapping("/countries")
-    public List<Countries> getAllCountries() {
+    public Page<Countries> getAllCountries(@RequestParam("page") int page, @RequestParam("limit") int limit) {
+        return countryRepository.findAll(PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "name")));
+    }
+    @GetMapping("/allcountries")
+    public List<Countries> getAllCountriesNoPagination() {
+        // Просто возвращает все страны без пагинации
         return countryRepository.findAll();
     }
-
     @GetMapping("/countries/{id}")
     public ResponseEntity<Countries> getCountry(@PathVariable(value = "id") Long countryId)
             throws DataValidationException {

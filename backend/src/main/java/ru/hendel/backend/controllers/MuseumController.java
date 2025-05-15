@@ -8,41 +8,59 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.hendel.backend.domain.Museum;
 import ru.hendel.backend.repos.MuseumRepository;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1")
+
+@CrossOrigin(origins = "http://localhost:3000")
 public class MuseumController {
 
     @Autowired
     private MuseumRepository museumRepository;
 
-    @GetMapping("/museums")
-    public List<Museum> getAllMuseums() {
-        return museumRepository.findAll();
+    @GetMapping("/museumsdetailed")
+    public List<Map<String, Object>> getAllMuseumsDetailed() {
+        List<Museum> museums = museumRepository.findAll();
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        for (Museum museum : museums) {
+            Map<String, Object> museumMap = new HashMap<>();
+            museumMap.put("id", museum.getId());
+            museumMap.put("name", museum.getName());
+            museumMap.put("location", museum.getLocation());
+
+            // Можно также добавить количество картин в музее
+            if (museum.getPaintings() != null) {
+                museumMap.put("paintingsCount", museum.getPaintings().size());
+            }
+
+            result.add(museumMap);
+        }
+
+        return result;
     }
 
-    @GetMapping("/museums/{id}")
-    public ResponseEntity<Museum> getMuseumById(@PathVariable(value = "id") Long museumId) {
-        Museum museum = museumRepository.findById(museumId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Museum not found"));
-        return ResponseEntity.ok(museum);
-    }
-
-    @PostMapping("/museums")
-    public ResponseEntity<Object> createMuseum(@RequestBody Museum museum) {
+    @PostMapping("/museum/create")
+    public ResponseEntity<Object> createMuseumWithParams(
+            @RequestParam("name") String name,
+            @RequestParam(value = "location", required = false) String location) {
         try {
+            Museum museum = new Museum();
+            museum.setName(name);
+
+            if (location != null) {
+                museum.setLocation(location);
+            }
+
             Museum newMuseum = museumRepository.save(museum);
             return new ResponseEntity<>(newMuseum, HttpStatus.OK);
         } catch (Exception ex) {
             String error;
             if (ex.getMessage().contains("museums.name_UNIQUE")) {
-                error = "museumnamealreadyexists";
+                error = "museumalreadyexists";
             } else {
-                error = "undefinederror";
+                error = "undefinederror: " + ex.getMessage();
             }
             Map<String, String> map = new HashMap<>();
             map.put("error", error);
@@ -50,28 +68,33 @@ public class MuseumController {
         }
     }
 
-    @PutMapping("/museums/{id}")
-    public ResponseEntity<Object> updateMuseum(@PathVariable(value = "id") Long museumId,
-                                               @RequestBody Museum museumDetails) {
-        Optional<Museum> museumOpt = museumRepository.findById(museumId);
-
-        if (!museumOpt.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Museum not found");
-        }
-
-        Museum museum = museumOpt.get();
-        museum.setName(museumDetails.getName());
-        museum.setLocation(museumDetails.getLocation());
-
+    @PutMapping("/museum/update/{id}")
+    public ResponseEntity<Object> updateMuseumWithParams(
+            @PathVariable(value = "id") Long museumId,
+            @RequestParam("name") String name,
+            @RequestParam(value = "location", required = false) String location) {
         try {
+            Optional<Museum> museumOpt = museumRepository.findById(museumId);
+
+            if (!museumOpt.isPresent()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Museum not found");
+            }
+
+            Museum museum = museumOpt.get();
+            museum.setName(name);
+
+            if (location != null) {
+                museum.setLocation(location);
+            }
+
             Museum updatedMuseum = museumRepository.save(museum);
             return ResponseEntity.ok(updatedMuseum);
         } catch (Exception ex) {
             String error;
             if (ex.getMessage().contains("museums.name_UNIQUE")) {
-                error = "museumnamealreadyexists";
+                error = "museumalreadyexists";
             } else {
-                error = "undefinederror";
+                error = "undefinederror: " + ex.getMessage();
             }
             Map<String, String> map = new HashMap<>();
             map.put("error", error);
@@ -79,19 +102,23 @@ public class MuseumController {
         }
     }
 
-    @DeleteMapping("/museums/{id}")
-    public ResponseEntity<Object> deleteMuseum(@PathVariable(value = "id") Long museumId) {
-        Optional<Museum> museum = museumRepository.findById(museumId);
-        Map<String, Boolean> resp = new HashMap<>();
+    @DeleteMapping("/museum/delete-by-id")
+    public ResponseEntity<?> deleteMuseumsByIds(@RequestParam("ids") List<Long> ids) {
+        List<Museum> museums = new ArrayList<>();
 
-        if (museum.isPresent()) {
-            museumRepository.delete(museum.get());
-            resp.put("deleted", Boolean.TRUE);
-        } else {
-            resp.put("deleted", Boolean.FALSE);
+        for (Long id : ids) {
+            museumRepository.findById(id).ifPresent(museums::add);
         }
 
-        return ResponseEntity.ok(resp);
+        if (!museums.isEmpty()) {
+            museumRepository.deleteAll(museums);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(
+                    Map.of("message", "Не найдены музеи с указанными ID"),
+                    HttpStatus.NOT_FOUND
+            );
+        }
     }
 
 

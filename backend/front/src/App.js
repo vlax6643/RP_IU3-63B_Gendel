@@ -11,6 +11,15 @@ import { connect } from 'react-redux';
 import SideBar from "./components/SideBar";
 import CountryListComponent from "./components/CountryListComponent";
 import CountryComponent from "./components/CountryComponent";
+import MyAccountComponent from "./components/MyAccountComponent";
+import UserListComponent from "./components/UserListComponent";
+import UserComponent from "./components/UserComponent";
+import PaintingComponent from "./components/PaintingComponent";
+import PaintingListComponent from "./components/PaintingListComponent";
+import MuseumComponent from "./components/MuseumComponent";
+import MuseumListComponent from "./components/MuseumListComponent";
+import ArtistComponent from "./components/ArtistComponent";
+import ArtistListComponent from "./components/ArtistListComponent";
 
 // Защищенный маршрут, использующий Redux
 const ProtectedRoute = ({ user, children }) => {
@@ -52,6 +61,15 @@ const App = props => {
                             <Route path="home" element={<ConnectedProtectedRoute><Home/></ConnectedProtectedRoute>}/>
                             <Route path="countries" element={<ConnectedProtectedRoute><CountryListComponent/></ConnectedProtectedRoute>}/>
                             <Route path="countries/:id" element={<ConnectedProtectedRoute><CountryComponent/></ConnectedProtectedRoute>}/>
+                            <Route path="artists" element={<ConnectedProtectedRoute><ArtistListComponent/></ConnectedProtectedRoute>}/>
+                            <Route path="artists/:id" element={<ConnectedProtectedRoute><ArtistComponent/></ConnectedProtectedRoute>}/>
+                            <Route path="museums" element={<ConnectedProtectedRoute><MuseumListComponent/></ConnectedProtectedRoute>}/>
+                            <Route path="museums/:id" element={<ConnectedProtectedRoute><MuseumComponent/></ConnectedProtectedRoute>}/>
+                            <Route path="paintings" element={<ConnectedProtectedRoute><PaintingListComponent/></ConnectedProtectedRoute>}/>
+                            <Route path="paintings/:id" element={<ConnectedProtectedRoute><PaintingComponent/></ConnectedProtectedRoute>}/>
+                            <Route path="users" element={<ConnectedProtectedRoute><UserListComponent/></ConnectedProtectedRoute>}/>
+                            <Route path="users/:id" element={<ConnectedProtectedRoute><UserComponent/></ConnectedProtectedRoute>}/>
+                            <Route path="myaccount" element={<ConnectedProtectedRoute><MyAccountComponent/></ConnectedProtectedRoute>}/>
                         </Routes>
                     </div>
                 </div>

@@ -9,7 +9,8 @@ class Utils {
 
     getToken() {
         let user = JSON.parse(localStorage.getItem('user'))
-        return user &&  user.token;
+        console.log('Retrieved user from localStorage:', user);
+        return user && user.token;
     }
 
     getUserName() {
